@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Traffic Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0962c7;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        h1 {
+            margin-top: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            margin: 20px;
+        }
+        .result {
+            margin: 20px 0;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Analysis Result for {{ website_link }}</h1>
+        <p class="result">DDoS Attack Detected: <strong>{{ 'Yes' if is_ddos_attack else 'No' }}</strong></p>
+        
+        <h2>Live Network Traffic Data</h2>
+        <canvas id="networkTrafficChart" width="400" height="200"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('networkTrafficChart').getContext('2d');
+        const data = {
+            labels: [],
+            datasets: [{
+                label: 'Network Traffic',
+                data: [],
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.1
+            }]
+        };
+
+        const config = {
+            type: 'line',
+            data: data,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        };
+
+        const networkTrafficChart = new Chart(ctx, config);
+
+        function updateChart() {
+            fetch('/get_live_network_traffic_data')
+                .then(response => response.json())
+                .then(data => {
+                    const currentTime = new Date();
+                    networkTrafficChart.data.labels.push(currentTime.toLocaleTimeString());
+                    networkTrafficChart.data.datasets[0].data.push(data.value);
+                    
+                    // Keep only the last 10 data points
+                    if (networkTrafficChart.data.labels.length > 10) {
+                        networkTrafficChart.data.labels.shift();
+                        networkTrafficChart.data.datasets[0].data.shift();
+                    }
+
+                    networkTrafficChart.update();
+                })
+                .catch(error => console.error('Error fetching live network traffic data:', error));
+        }
+
+        setInterval(updateChart, 1000); // Update the chart every second
+    </script>
+</body>
+</html>

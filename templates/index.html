@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDoS Attack Detection</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #000428, #004e92);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            width: 80%; /* Adjust width as needed */
+            max-width: 600px; /* Adjust max-width as needed */
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        label {
+            margin-bottom: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            color: #495057;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DDoS Attack Detection</h1>
+        <form id="ddos-form" method="post" action="/">
+            <label for="website_link">Enter Website Link:</label>
+            <input type="text" id="website_link" name="website_link" required>
+            <button type="submit">Detect DDoS Attack</button>
+        </form>
+    </div>
+
+    <!-- Include Chart.js library for graph rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom JavaScript for graph updates -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var ctx = document.getElementById('networkGraph').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Network Traffic',
+                        data: [],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        xAxes: [{
+                            type: 'realtime',
+                            realtime: {
+                                duration: 20000,
+                                refresh: 1000,
+                                delay: 2000,
+                                pause: false,
+                                ttl: 60000
+                            }
+                        }],
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true,
+                                suggestedMax: 100
+                            }
+                        }]
+                    }
+                }
+            });
+
+            // Function to update chart with new data
+            function updateChart(label, value) {
+                chart.data.labels.push(label);
+                chart.data.datasets[0].data.push(value);
+                chart.update();
+            }
+
+            // Example: Update chart with initial data from Flask
+            var initialData = {{ initial_network_traffic_data | safe }};
+            initialData.forEach(function(data, index) {
+                updateChart(index.toString(), data);
+            });
+
+            // Replace with actual data update from Flask backend using WebSocket or AJAX
+            // Example using AJAX to fetch new data every second
+            setInterval(function() {
+                fetch('/get_live_network_traffic_data')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateChart(new Date().toLocaleTimeString(), data.value);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                    });
+            }, 1000); // Update every 1 second, adjust as needed
+        });
+    </script>
+</body>
+</html>
